@@ -9,4 +9,4 @@ Transformer quantum state implentation for the dipolar XY model, which can be pr
     <img width="479" alt="Momentum_git" src="https://github.com/HannahLange/HybridTransformer/blob/main/HybridTraining.jpg">
 </div>
 
-The source code is provided in the folder [src](https://github.com/HannahLange/HybridTransformer/tree/main/src). It contains `model.py` and `pos_encoding.py` with the implementation of the autoregressive, patched transformer that can be supplemented with spatial symmetries using `symmetries.py` as well as `localenergy.py` with the implementation of the Hamiltonian. 
+The source code is provided in the folder [src](https://github.com/HannahLange/HybridTransformer/tree/main/src). It contains `model.py` and `pos_encoding.py` with the implementation of the autoregressive, patched transformer that can be supplemented with spatial symmetries using `symmetries.py` as well as `localenergy.py` with the implementation of the Hamiltonian. Furthermore, we provide the exemplary run files `run_pretraining.py` and `run.py`.
