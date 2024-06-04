@@ -11,7 +11,10 @@ from torch.distributions.binomial import Binomial
 pi = np.pi
 
 
-
+"""
+This code is adapted from Zhang et al. (https://journals.aps.org/prb/abstract/10.1103/PhysRevB.107.075147) 
+and Sprague et al. (https://www.nature.com/articles/s42005-024-01584-y)
+"""
 
 class Patch2D(nn.Module):
     def __init__(self,nx,ny,Lx,Ly,device):
@@ -187,13 +190,7 @@ class TransformerModel(nn.Module):
     @staticmethod
     def softsign(x):
         """
-            Defined in Hibat-Allah, Mohamed, et al. 
-                        "Recurrent neural network wave functions." 
-                        Physical Review Research 2.2 (2020): 023358.
-            Used as the activation function on the phase output
-            range: (-2pi, 2pi)
-            NOTE: this function outputs 2\phi, where \phi is the phase
-                  an additional factor of 2 is included, to ensure \phi\in(-\pi, \pi)
+            Similar to Hibat-Allah, Mohamed, et al. Physical Review Research 2.2 (2020): 023358.
         """
         return 2 * pi * (1 + x / (1 + x.abs()))
 
