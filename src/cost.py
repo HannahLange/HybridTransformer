@@ -8,6 +8,9 @@ from ot.lp import wasserstein_1d
 
 
 def cost_fct_samples(model, device, params, bounds_x, bounds_y, antisym, num_samples=None, exp_samples=None):
+    """
+    Cost function for data-driven pretraining based on Kullback-Leibler divergence.
+    """
     cost = 0
     if exp_samples != None:
         for basis in exp_samples.keys():
@@ -17,7 +20,6 @@ def cost_fct_samples(model, device, params, bounds_x, bounds_y, antisym, num_sam
                     exp_samples_batch = exp_samples[basis].to(device)[torch.randperm(exp_samples[basis].shape[0])][:num_samples]
                 else:
                     exp_samples_batch = exp_samples[basis].to(device)
-                print(exp_samples_batch.shape)
                 # calculate the true distribution q
                 true_samples, true_freq = torch.unique(exp_samples_batch, dim=0, return_counts=True)
                 p_true = true_freq/exp_samples_batch.shape[0]
@@ -26,7 +28,6 @@ def cost_fct_samples(model, device, params, bounds_x, bounds_y, antisym, num_sam
                 if basis!= "Z":
                     raise NotImplementedError
                 cost -= torch.sum(p_true*p_TQS) #torch.nn.KLDivLoss()(p_TQS, p_true) 
-                print("KL", cost)
         return cost
     else:
         samples, weights = model.sample(num_samples)
@@ -38,6 +39,9 @@ def cost_fct_samples(model, device, params, bounds_x, bounds_y, antisym, num_sam
         return Eloc, cost, samples, weights, log_probs, phases
 
 def cost_fct_samples_ot(model, device, params, bounds_x, bounds_y, antisym, num_samples=None, exp_samples=None, p=1):
+    """
+    Cost function for data-driven pretraining based on Wasserstein distance and optimal transport (ot).
+    """
     cost = 0
     if exp_samples != None:
         for basis in exp_samples.keys():
@@ -61,7 +65,6 @@ def cost_fct_samples_ot(model, device, params, bounds_x, bounds_y, antisym, num_
                 if basis != "Z":
                     raise NotImplementedError
                 cost += wasserstein_1d(dist_TQS, dist_true, p_TQS, p_true, p=p) / true_samples.shape[1] * 1/params["delta"]
-                print("OT", cost)
         return cost
     else:
         samples, weights = model.sample(num_samples)
@@ -74,6 +77,9 @@ def cost_fct_samples_ot(model, device, params, bounds_x, bounds_y, antisym, num_
 
 
 def cost_fct_corr(model, device, params, bounds_x, bounds_y, antisym, num_samples=None, exp_corrs=None, true_mag=None, experimental_data=True):
+    """
+    Cost function for data-driven pretraining based on correlation maps.
+    """
     cost = 0
     if exp_corrs != None:
         samples, weights = model.sample(num_samples)
@@ -119,6 +125,9 @@ def cost_fct_corr(model, device, params, bounds_x, bounds_y, antisym, num_sample
 
 @torch.no_grad()
 def get_mag(samples,weights,basis, model):
+    """
+    Calculates the local magnetization of samples in a certain basis.
+    """
     if basis == "Z":
         log_probs, _ = model.compute_psi(samples)
         probs = torch.exp(log_probs)/torch.exp(log_probs).sum() 
@@ -155,6 +164,9 @@ def get_mag(samples,weights,basis, model):
     return mag
 
 def get_s_corr(samples, weights, basis, model):
+    """
+    Calculates the spin-spin correlations of samples in a certain basis.
+    """
     batch, Nx, Ny = samples.shape
     mid = [[int(Nx/2), int(Ny/2)]]
     if Nx%2==0 and Ny%2==0:
