@@ -253,7 +253,8 @@ class TransformerModel(nn.Module):
 
     def next_with_cache(self,tgt,mask,cache=None,idx=-1):
         """Calculates the next output of a transformer given the input sequence and 
-        cached intermediate layer encodings of the input sequence
+        cached intermediate layer encodings of the input sequence.
+        Adapted from Sprague et al. (https://www.nature.com/articles/s42005-024-01584-y).
         """
         output = tgt
         new_token_cache = []
