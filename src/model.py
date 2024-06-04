@@ -17,6 +17,9 @@ and Sprague et al. (https://www.nature.com/articles/s42005-024-01584-y)
 """
 
 class Patch2D(nn.Module):
+    """
+    Patches the input into nx x ny patches. Adapted from Sprague et al. (https://www.nature.com/articles/s42005-024-01584-y).
+    """
     def __init__(self,nx,ny,Lx,Ly,device):
         super().__init__()
         self.nx=nx
@@ -32,7 +35,6 @@ class Patch2D(nn.Module):
         self.mixed=torch.argsort(self.mixed_)
 
     def forward(self,x,Lx=None,Ly=None):
-        # type: (Tensor) -> Tensor
         nx,ny,Lx,Ly=self.nx,self.ny,self.Lx,self.Ly
         """Unflatten a tensor back to 2D, break it into nxn chunks, then flatten the sequence and the chunks
             Input:
@@ -49,7 +51,6 @@ class Patch2D(nn.Module):
         return x.view([x.shape[0],Lx,Ly]).unfold(-2,nx,nx).unfold(-2,ny,ny).reshape([x.shape[0],int(Lx*Ly//(nx*ny)),nx*ny])
 
     def reverse(self,x,L=None):
-        # type: (Tensor) -> Tensor
         """Inverse function of forward
             Input:
                 Tensor of shape [B,L//n^2,n^2]
@@ -66,7 +67,6 @@ class Patch2D(nn.Module):
 
 
     def genpatch2onehot(self,patch,p):
-        # type: (Tensor,int) -> Tensor
         """ Turn a sequence of size p patches into a onehot vector
         Inputs:
             patch - Tensor of shape [?,p]
@@ -82,7 +82,7 @@ class Patch2D(nn.Module):
 
 
 class TransformerModel(nn.Module):
-    """Container module with an encoder, a recurrent or transformer module, and a decoder."""
+    """Transformer wave function. Adapted from Zhang et al. (https://journals.aps.org/prb/abstract/10.1103/PhysRevB.107.075147)."""
 
     def __init__(self, system_size, embedding_size, n_head, n_hid=2048, n_layers=2, phys_dim=2, dropout=0.0, patchsize=[2,2], symmetry=None, U1sym=True, device=None, minibatch=None):
         super(TransformerModel, self).__init__()
@@ -135,29 +135,24 @@ class TransformerModel(nn.Module):
         self.to(device)
         self.get_sublattice_config()
 
-    def get_sublattice_config(self):
-        config = torch.zeros((self.system_size[0],self.system_size[1]), device=self.device)
-        for i in range(self.system_size[0]):
-            for j in range(self.system_size[1]):
-                if not ((i%2==0 and j%2==0) or (i%2==1 and j%2==1)): #sublattice
-                    config[i][j] = 1
-        self.sublattice_config = config.to(torch.long)
-
 
     def symmetry_settings(self,sym):
+        """
+        Adds 180 degree rotational symmetry.
+        """
         if sym != None:
             sym.add_symmetry('rotation_180')
         return sym
 
     def wrap_spins(self, spins):
         """
-            spins: (n, batch)
+            Transforms input to the correct form.
         """
         n, batch, _  = spins.shape
         if self.p>1:
             if n<self.npatch:
                 src = torch.zeros(n+1, batch, self.p, device=self.device)
-                src[1:] = spins #F.one_hot(spins.to(torch.int64), num_classes=self.p)
+                src[1:] = spins 
             else:
                 src = torch.zeros(n, batch, self.p, device=self.device)
                 src[1:] = spins[:-1].to(torch.float32)
@@ -172,11 +167,16 @@ class TransformerModel(nn.Module):
         return src
 
     def _generate_square_subsequent_mask(self,sz):
+        """
+        Generates the mask for an input sz.
+        """
         mask = (torch.triu(torch.ones(sz, sz, device=self.device)) == 1).transpose(0, 1)
         mask = mask.float().masked_fill(mask == 0, float('-inf')).masked_fill(mask == 1, float(0.0))
         return mask
 
     def init_weights(self):
+        """ Initializes the weights.
+        """
         initrange = 0.1
         nn.init.uniform_(self.tokenize[0].weight, -initrange, initrange)
         nn.init.zeros_(self.tokenize[0].bias)
@@ -190,12 +190,15 @@ class TransformerModel(nn.Module):
     @staticmethod
     def softsign(x):
         """
+            Activation for the phases.
             Similar to Hibat-Allah, Mohamed, et al. Physical Review Research 2.2 (2020): 023358.
         """
         return 2 * pi * (1 + x / (1 + x.abs()))
 
     def forward(self, spins, cache, compute_cache, compute_phase=True):
-        # src: (seq, batch, input_dim)
+        """
+        Calculates the phase and amplitude for spins. If compute_cache=True, the last outputs are cached.
+        """
         phase = None
         src = self.wrap_spins(spins)
         if self.src_mask is None or self.src_mask.size(0) != len(src):
@@ -249,17 +252,8 @@ class TransformerModel(nn.Module):
         return amp, phase, new_cache
 
     def next_with_cache(self,tgt,mask,cache=None,idx=-1):
-        # type: (Tensor,Optional[Tensor],int) -> Tuple[Tensor,Tensor]
-        """Efficiently calculates the next output of a transformer given the input sequence and 
+        """Calculates the next output of a transformer given the input sequence and 
         cached intermediate layer encodings of the input sequence
-
-        Inputs:
-            tgt - Tensor of shape [L,B,Nh]
-            cache - Tensor of shape ?
-            idx - index from which to start
-        Outputs:
-            output - Tensor of shape [?,B,Nh]
-            new_cache - Tensor of shape ?
         """
         output = tgt
         new_token_cache = []
@@ -300,17 +294,7 @@ class TransformerModel(nn.Module):
     @torch.no_grad()
     def sample(self, batch=10000, unique=True):
         """
-
-        Parameters
-        ----------
-        batch : int, optional
-            Number of samples to generate. The default is 10000.
-
-        Returns
-        -------
-        samples : (n, batch)
-            sampled binary configurations
-
+        Generates batch samples. If unique=True, only unique samples are generated.
         """
         batch0 = batch
         assert self.phys_dim == 2, "Only spin 1/2 systems are supported"
@@ -347,26 +331,12 @@ class TransformerModel(nn.Module):
             samples_sym = self.symmetry.apply_random(samples_sym)
             samples = torch.permute(samples_sym, (1,0))
         samples = torch.reshape(samples, (samples.shape[0],-1,self.system_size[1]))
-        return samples, sample_count / batch0  # (n, batch), (batch, )
+        return samples, sample_count / batch0  
 
     @torch.jit.export
     def compute_psi(self, samples, check_duplicate=True, with_U1=False):
         """
-
-        Parameters
-        ----------
-        samples : Tensor, (n, batch)
-            samples drawn from the wave function
-        check_duplicate : bool, optional
-            whether to check for duplicate samples. The default is False.
-
-        Returns
-        -------
-        log_amp : (batch, )
-        log_phase : (batch, )
-
-        extract the relevant part of the distribution, ignore the last output
-        and the param distribution
+        Calculates the logarithmic amplitude and phase for samples.
         """
         samples_ = samples.clone()
         samples_ = torch.reshape(samples_, (samples.shape[0],-1))
