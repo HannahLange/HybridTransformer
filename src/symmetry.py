@@ -2,7 +2,7 @@ import numpy as np
 import torch
 
 """
-Implementation from Zhang et al. (https://journals.aps.org/prb/abstract/10.1103/PhysRevB.107.075147)
+Implementation adapted from Zhang et al. (https://journals.aps.org/prb/abstract/10.1103/PhysRevB.107.075147)
 """
 
 def cyclic_permutation_idx(n):
