@@ -7,9 +7,7 @@ import torch.nn as nn
 class TQSPositionalEncoding2D(nn.Module):
     """
         Adapted from Zhang et al. (https://journals.aps.org/prb/abstract/10.1103/PhysRevB.107.075147).
-        A mixture of learnable and fixed positional encoding
-        the first param_dim inputs have a learnable pe (parameter part)
-        the rest have a sinusoidal pe (physical dimensions)
+        Sinusoidal positional encoding.
     """
 
     def __init__(self, d_model, param_dim, device, max_system_size=None, dropout=0):
