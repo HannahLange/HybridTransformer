@@ -4,14 +4,15 @@ import torch.nn as nn
 
 def XY_MatrixElements(Jp, delta, samples_, boundx, boundy, device, neighbors=[[1,0],[0,1],[1,1],[1,-1],[2,0],[0,2],[2,1],[1,2],[2,-1],[1,-2],[2,2],[2,-2]], dtype=torch.float64, diag=False):
     """ 
-    Calculate the local energies of 2D t-J model given a set of set of samples.
+    Calculate the local energies of 2D dipolar XY model given a set of set of samples.
     Returns: The local energies that correspond to the input samples.
     Inputs:
-    - samples: (num_samples, N)
     - Jp: float
     - delta: float
+    - samples: (num_samples, N)
     - boundx, boundy: boundary conditions
     - neighbors: [[1,0],[0,1],[1,1],[1,-1],[2,0],[0,2],[2,1],[1,2],[2,-1],[1,-2],[2,2],[2,-2]]
+    - diag: if diag=True calculates only diagonal part of the energy (needed for Wasserstein distance)
     """
 
 
@@ -82,13 +83,14 @@ def XY_MatrixElements(Jp, delta, samples_, boundx, boundy, device, neighbors=[[1
 
 def get_Eloc(parameters, samples, model, boundaries_x, boundaries_y, antisym, diag=False):
     """ 
-    Calculate the local energies of 2D t-J model given a set of set of samples.
+    Calculate the local energies of 2D dipolar XY model given a set of set of samples.
     Returns: The local energies that correspond to the input samples.
     Inputs:
     - parameters: dict of parameters of the model
     - samples: (num_samples, N)
     - model: NN model
     - boundaries: str, open or periodic
+    - diag: if diag=True calculates only diagonal part of the energy (needed for Wasserstein distance)
     """
     Jp = parameters["Jp"]
     delta = parameters["delta"]
